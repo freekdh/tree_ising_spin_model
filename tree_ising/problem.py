@@ -8,4 +8,4 @@ class IsingTreeProblem:
     This class represents the ising tree problem to be solved.
     """
 
-    digraph: DiGraph
+    directed_graph: DiGraph
