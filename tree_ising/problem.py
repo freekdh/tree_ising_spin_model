@@ -17,14 +17,7 @@ class IsingTreeProblem:
         """
         Return all the weights in the directed graph (including nodes and edges)
         """
-        return len(set(self.get_nodes_with_nonzero_weights())) + len(set(self.get_edges_with_nonzero_weights()))
+        return len(set(self.get_nodes_with_weights())) + self.directed_graph.number_of_edges()
 
-    def get_nodes_with_nonzero_weights(self) -> Iterable:
-        for node in self.directed_graph.nodes:
-            print(node)
-        print(self.directed_graph.edges)
-        return (node for node in self.directed_graph.nodes if node["weight"] != 0)
-
-    def get_edges_with_nonzero_weights(self) -> Iterable:
-        return (edge for edge in self.directed_graph.edges if edge["weight"] != 0)
-
+    def get_nodes_with_weights(self) -> Iterable:
+        return (node for node, data in self.directed_graph.nodes(data=True) if "weight" in data)
