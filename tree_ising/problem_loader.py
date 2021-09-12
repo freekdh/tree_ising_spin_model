@@ -2,7 +2,9 @@ from tree_ising.problem import IsingTreeProblem
 from abc import ABC, abstractmethod
 from os import path
 from networkx import DiGraph
+import logging
 
+logger = logging.getLogger(__name__)
 
 class ProblemLoader(ABC):
     """
@@ -30,9 +32,9 @@ class ProblemLoaderFromFile(ProblemLoader):
         with open(file_path) as input_file:
             for line in input_file:
                 if line.startswith("p"):
-                    file_name = line
-                    n_spins = line
-                    n_weights = line
+                    _, file_name, n_spins, n_weights = line.strip().split(" ")
+                    logger.info(f"loading problem {file_name}")
+                    n_spins, n_weights = map(int, (n_spins, n_weights))
                     break
 
             for data_line in input_file:
@@ -46,4 +48,9 @@ class ProblemLoaderFromFile(ProblemLoader):
                     except KeyError:
                         directed_graph.add_node(node_i, weight=weight)
 
-        return IsingTreeProblem(directed_graph=directed_graph)
+        ising_tree_problem = IsingTreeProblem(directed_graph=directed_graph)
+
+        assert ising_tree_problem.get_n_nodes() == n_spins
+        assert ising_tree_problem.get_n_weights() == n_weights
+
+        return ising_tree_problem

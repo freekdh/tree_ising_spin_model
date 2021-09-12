@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Iterable
 from networkx import DiGraph
 
+
 @dataclass(frozen=True)
 class IsingTreeProblem:
     """
@@ -17,7 +18,14 @@ class IsingTreeProblem:
         """
         Return all the weights in the directed graph (including nodes and edges)
         """
-        return len(set(self.get_nodes_with_weights())) + self.directed_graph.number_of_edges()
+        return (
+            len(set(self.get_nodes_with_weights()))
+            + self.directed_graph.number_of_edges()
+        )
 
     def get_nodes_with_weights(self) -> Iterable:
-        return (node for node, data in self.directed_graph.nodes(data=True) if "weight" in data)
+        return (
+            node
+            for node, data in self.directed_graph.nodes(data=True)
+            if "weight" in data
+        )
