@@ -1,8 +1,15 @@
+from typing import Dict, List, Tuple
+import networkx
+from networkx.algorithms.tree.coding import from_nested_tuple
+
+from networkx.classes.graph import Graph
+from networkx.convert import from_edgelist
 from tree_ising.problem import IsingTreeProblem
 from abc import ABC, abstractmethod
 from os import path
 from networkx import DiGraph
 import logging
+import random
 
 logger = logging.getLogger(__name__)
 
@@ -10,11 +17,20 @@ class ProblemLoader(ABC):
     """
     Base class for loading the ising tree problems
     """
+    def __init__(self, seed: int = None, root_node= None):
+        """
+        If root node is not None, this will be used as root node. Otherwise we draw a random root node.
+        """
+        if seed:
+            random.seed(seed)
+        self._root_node = root_node
 
     @abstractmethod
     def load_problem(self, file_path: str) -> IsingTreeProblem:
         pass
 
+    def _get_random_root_node(self, nodes: List[int]) -> int:
+        return random.choice(nodes)
 
 class ProblemLoaderFromFile(ProblemLoader):
     def load_problem(self, file_path: str) -> IsingTreeProblem:
@@ -27,30 +43,43 @@ class ProblemLoaderFromFile(ProblemLoader):
         - Data lines contain three fields (u,v,weight). The weights are integers.
         """
         assert path.isfile(file_path)
+        
+        graph, weights = self._get_graph_and_weights_from_file(file_path)
+        assert networkx.is_tree(graph), f"The graph defined in file {file_path} is not a tree"
 
-        directed_graph = DiGraph()
+        root_node=self._root_node if self._root_node else self._get_random_root_node(nodes=list(graph.nodes))
+        logging.info(f"chosen '{root_node}'' as root node")
+
+        directed_graph = networkx.bfs_tree(graph, root_node)
+
+        self._add_weights_to_graph(directed_graph, weights)
+
+        return IsingTreeProblem(directed_graph=directed_graph, root_node=root_node)
+
+    def _get_graph_and_weights_from_file(self, file_path: str) -> Tuple[Graph, List]:
         with open(file_path) as input_file:
             for line in input_file:
                 if line.startswith("p"):
                     _, file_name, n_spins, n_weights = line.strip().split(" ")
+                    n_spins, n_weights = int(n_spins), int(n_weights)
                     logger.info(f"loading problem {file_name}")
-                    n_spins, n_weights = map(int, (n_spins, n_weights))
                     break
+            
+            data_lines = list(tuple(map(int, data_line.strip().split(" "))) for data_line in input_file)
 
-            for data_line in input_file:
-                data = data_line.strip().split(" ")
-                node_i, node_j, weight = map(int, data)
-                if node_i != node_j:
-                    directed_graph.add_edge(node_i, node_j, weight=weight)
-                else:
-                    try:
-                        directed_graph.nodes[node_i]["weight"] = weight
-                    except KeyError:
-                        directed_graph.add_node(node_i, weight=weight)
+            graph = Graph((data_line[:2] for data_line in data_lines))
+            graph.remove_edges_from(networkx.selfloop_edges(graph))
+        
+        return (graph, data_lines)
 
-        ising_tree_problem = IsingTreeProblem(directed_graph=directed_graph)
+    def _add_weights_to_graph(self, directed_graph: DiGraph, weights):
+        # Default all spins have a weight of 0
+        for node in directed_graph.nodes:
+            directed_graph.nodes[node]["weight"] = 0
 
-        assert ising_tree_problem.get_n_nodes() == n_spins
-        assert ising_tree_problem.get_n_weights() == n_weights
-
-        return ising_tree_problem
+        # Assign weights to directed graph
+        for weight in weights:
+            if weight[0] == weight[1]:
+                directed_graph.nodes[weight[0]]["weight"] = weight[2]
+            else:
+                directed_graph.edges[(weight[0],weight[1])]["weight"] = weight[2]
