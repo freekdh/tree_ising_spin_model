@@ -1,15 +1,15 @@
 import pytest
 from glob import iglob
 
+test_file = "tests/test_problems/input_test_problem.txt"
 
-@pytest.mark.parametrize(
-    "input_problem_path,expected_nodes,expected_weights",
-    [("tests/test_problems/input_test_problem.txt", 4, 6)],
-)
-def test_problem_loader_from_file(
-    problem_loader_from_file, input_problem_path, expected_nodes, expected_weights
-):
-    ising_problem = problem_loader_from_file.load_problem(file_path=input_problem_path)
 
-    assert ising_problem.get_n_nodes() == expected_nodes
-    assert ising_problem.get_n_weights() == expected_weights
+@pytest.mark.parametrize("root_node", [0, 1, 3])
+def test_problem_loader_from_file(problem_loader_from_file, root_node):
+    ising_problem = problem_loader_from_file.load_problem(
+        file_path=test_file, root_node=root_node
+    )
+
+    assert ising_problem.get_n_nodes() == 4
+    assert ising_problem.get_n_weights() == 6
+    assert ising_problem.root_node == root_node

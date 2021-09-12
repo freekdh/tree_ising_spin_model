@@ -13,11 +13,13 @@ import random
 
 logger = logging.getLogger(__name__)
 
+
 class ProblemLoader(ABC):
     """
     Base class for loading the ising tree problems
     """
-    def __init__(self, seed: int = None, root_node= None):
+
+    def __init__(self, seed: int = None, root_node=None):
         """
         If root node is not None, this will be used as root node. Otherwise we draw a random root node.
         """
@@ -32,8 +34,9 @@ class ProblemLoader(ABC):
     def _get_random_root_node(self, nodes: List[int]) -> int:
         return random.choice(nodes)
 
+
 class ProblemLoaderFromFile(ProblemLoader):
-    def load_problem(self, file_path: str) -> IsingTreeProblem:
+    def load_problem(self, file_path: str, root_node: int = None) -> IsingTreeProblem:
         """
         Assuming the problem file:
         - A comment line start with a lower case c and may appear anywhere
@@ -41,13 +44,21 @@ class ProblemLoaderFromFile(ProblemLoader):
         It containts three fields (test_name, #spins, #weights) and separated by
         at least one space. The number of weights is equal to the number of data lines.
         - Data lines contain three fields (u,v,weight). The weights are integers.
+
+        If root node is None, a random one is chosen.
         """
         assert path.isfile(file_path)
-        
-        graph, weights = self._get_graph_and_weights_from_file(file_path)
-        assert networkx.is_tree(graph), f"The graph defined in file {file_path} is not a tree"
 
-        root_node=self._root_node if self._root_node else self._get_random_root_node(nodes=list(graph.nodes))
+        graph, weights = self._get_graph_and_weights_from_file(file_path)
+        assert networkx.is_tree(
+            graph
+        ), f"The graph defined in file {file_path} is not a tree"
+
+        root_node = (
+            root_node
+            if root_node
+            else self._get_random_root_node(nodes=list(graph.nodes))
+        )
         logging.info(f"chosen '{root_node}'' as root node")
 
         directed_graph = networkx.bfs_tree(graph, root_node)
@@ -64,12 +75,15 @@ class ProblemLoaderFromFile(ProblemLoader):
                     n_spins, n_weights = int(n_spins), int(n_weights)
                     logger.info(f"loading problem {file_name}")
                     break
-            
-            data_lines = list(tuple(map(int, data_line.strip().split(" "))) for data_line in input_file)
+
+            data_lines = list(
+                tuple(map(int, data_line.strip().split(" ")))
+                for data_line in input_file
+            )
 
             graph = Graph((data_line[:2] for data_line in data_lines))
             graph.remove_edges_from(networkx.selfloop_edges(graph))
-        
+
         return (graph, data_lines)
 
     def _add_weights_to_graph(self, directed_graph: DiGraph, weights):
@@ -78,8 +92,13 @@ class ProblemLoaderFromFile(ProblemLoader):
             directed_graph.nodes[node]["weight"] = 0
 
         # Assign weights to directed graph
-        for weight in weights:
-            if weight[0] == weight[1]:
-                directed_graph.nodes[weight[0]]["weight"] = weight[2]
+        for weight_data in weights:
+            node_i, node_j, weight = weight_data
+            if node_i == node_j:
+                directed_graph.nodes[node_i]["weight"] = weight
             else:
-                directed_graph.edges[(weight[0],weight[1])]["weight"] = weight[2]
+                # The weight is independent of the direction of the edge.
+                try:
+                    directed_graph.edges[(node_i, node_j)]["weight"] = weight
+                except KeyError:
+                    directed_graph.edges[(node_j, node_i)]["weight"] = weight
