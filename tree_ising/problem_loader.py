@@ -1,31 +1,30 @@
-from typing import Dict, List, Tuple
-import networkx
-from networkx.algorithms.tree.coding import from_nested_tuple
-
-from networkx.classes.graph import Graph
-from networkx.convert import from_edgelist
-from tree_ising.problem import IsingTreeProblem
-from abc import ABC, abstractmethod
-from os import path
-from networkx import DiGraph
 import logging
 import random
+from abc import ABC, abstractmethod
+from os import path
+from typing import Dict, List, Tuple
+
+import networkx
+from networkx import DiGraph
+from networkx.algorithms.tree.coding import from_nested_tuple
+from networkx.classes.graph import Graph
+from networkx.convert import from_edgelist
+
+from tree_ising.problem import IsingTreeProblem
 
 logger = logging.getLogger(__name__)
 
 
 class ProblemLoader(ABC):
-    """
-    Base class for loading the ising tree problems
-    """
+    """Base class for loading the ising tree problems."""
 
-    def __init__(self, seed: int = None, root_node=None):
-        """
-        If root node is not None, this will be used as root node. Otherwise we draw a random root node.
+    def __init__(self, seed: int = None):
+        """If root node is not None, this will be used as root node.
+
+        Otherwise we draw a random root node.
         """
         if seed:
             random.seed(seed)
-        self._root_node = root_node
 
     @abstractmethod
     def load_problem(self, file_path: str) -> IsingTreeProblem:
@@ -37,8 +36,8 @@ class ProblemLoader(ABC):
 
 class ProblemLoaderFromFile(ProblemLoader):
     def load_problem(self, file_path: str, root_node: int = None) -> IsingTreeProblem:
-        """
-        Assuming the problem file:
+        """Assuming the problem file:
+
         - A comment line start with a lower case c and may appear anywhere
         - The problem line starts with a p and appears before the data lines.
         It containts three fields (test_name, #spins, #weights) and separated by

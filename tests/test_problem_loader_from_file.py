@@ -1,5 +1,5 @@
 import pytest
-from glob import iglob
+from networkx import topological_sort
 
 test_file = "tests/test_problems/input_test_problem.txt"
 
@@ -13,3 +13,5 @@ def test_problem_loader_from_file(problem_loader_from_file, root_node):
     assert ising_problem.get_n_nodes() == 4
     assert ising_problem.get_n_weights() == 6
     assert ising_problem.root_node == root_node
+
+    assert next(topological_sort(ising_problem.directed_graph)) == root_node

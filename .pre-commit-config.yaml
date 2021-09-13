@@ -1,0 +1,32 @@
+repos:
+    - repo: https://github.com/kynan/nbstripout
+      rev: 0.5.0
+      hooks:
+        - id: nbstripout
+          files: ".ipynb"
+
+    - repo: https://github.com/psf/black
+      rev: 21.8b0
+      hooks:
+        - id: black
+          language_version: python3
+
+    - repo: https://github.com/pycqa/isort
+      rev: 5.9.3
+      hooks:
+        - id: isort
+          args: ["--profile", "black", "--filter-files"]
+
+    - repo: https://github.com/myint/docformatter
+      rev: v1.4
+      hooks:
+        - id: docformatter
+          args: ["--recursive", "--in-place", "--wrap-summaries=88", "--wrap-descriptions=88"]
+
+    - repo: https://github.com/myint/autoflake
+      rev: v1.4
+      hooks:
+         - id: autoflake
+           files: (^tests/)|(^[^/]*$)
+           exclude: conftest|setup
+           args: ["--in-place", "--remove-all-unused-imports", "--recursive", "--ignore-init-module-imports"]
