@@ -99,3 +99,18 @@ class ProblemLoaderFromFile(ProblemLoader):
                     directed_graph.edges[(node_i, node_j)]["weight"] = weight
                 except KeyError:
                     directed_graph.edges[(node_j, node_i)]["weight"] = weight
+
+
+class ProblemLoaderFromNSpins(ProblemLoader):
+    def load_problem(self, depth: int) -> IsingTreeProblem:
+        """Generate a problem from a regular tree with root node 0 and depth."""
+        random_tree = networkx.generators.classic.balanced_tree(
+            r=2, h=depth, create_using=DiGraph
+        )
+
+        for edge in random_tree.edges:
+            random_tree.edges[edge]["weight"] = 1
+
+        for node in random_tree.nodes:
+            random_tree.nodes[node]["weight"] = -1
+        return IsingTreeProblem(directed_graph=random_tree, root_node=0)
