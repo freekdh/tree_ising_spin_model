@@ -158,4 +158,11 @@ if __name__ == "__main__":
         file_path="tests/test_problems/input_test_problem.txt", root_node=0
     )
 
-    print(solve_ising_problem(ising_problem))
+    solution_configuration = solve_ising_problem(ising_problem)
+
+    from tree_ising.output_handler import FileOutputHandler
+
+    file_output_handler = FileOutputHandler(file_path="output.txt")
+    file_output_handler.handle_configuration(
+        solution_configuration=solution_configuration
+    )
