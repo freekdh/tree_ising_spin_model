@@ -48,7 +48,7 @@ def min_energy_configuration_subtree(
         )
 
         focal_weight = directed_graph.nodes[focal_spin]["weight"]
-        focal_value_contribution = focal_spin_value * focal_weight
+        focal_spin_value_contribution = focal_spin_value * focal_weight
 
         parent_to_focal_weight = directed_graph.edges[(parent_spin, focal_spin)][
             "weight"
@@ -59,7 +59,7 @@ def min_energy_configuration_subtree(
 
         return (
             min_energy_subtree_given_focal_spin_value
-            + focal_value_contribution
+            + focal_spin_value_contribution
             + parent_spin_value_contribution
         )
 
