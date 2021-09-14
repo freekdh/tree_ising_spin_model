@@ -53,11 +53,9 @@ class ProblemLoaderFromFile(ProblemLoader):
             graph
         ), f"The graph defined in file {file_path} is not a tree"
 
-        root_node = (
-            root_node
-            if root_node
-            else self._get_random_root_node(nodes=list(graph.nodes))
-        )
+        if root_node is None:
+            root_node = self._get_random_root_node(nodes=list(graph.nodes))
+
         logging.info(f"chosen '{root_node}'' as root node")
 
         directed_graph = networkx.bfs_tree(graph, root_node)
