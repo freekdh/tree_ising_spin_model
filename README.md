@@ -5,8 +5,13 @@ which stores the previously calculated values.
 # Installation
 I'm using python version 3.9.7
 
-First install the package by:
+First install the requirements:
+`pip install -r requirements.txt`
+
+Second install the package by:
 `pip install -e .`
+
+If you are successful you should be able to run `pytest` in the root directory and all tests should pass:)
 
 # Tests
 I'm using `pytest` for the testenvironment. 
