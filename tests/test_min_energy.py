@@ -10,4 +10,6 @@ def test_get_min_energy(problem_loader_from_file, root_node):
         file_path="tests/test_problems/input_test_problem.txt", root_node=root_node
     )
 
-    assert solve_ising_problem(ising_problem) == -4
+    optimal_configuration = solve_ising_problem(ising_problem)
+    assert optimal_configuration.spin_assignment == {0: 1, 1: -1, 2: 1, 3: 1}
+    assert optimal_configuration.energy == -4

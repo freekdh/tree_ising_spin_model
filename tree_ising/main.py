@@ -1,7 +1,8 @@
 import logging
 import sys
 from dataclasses import dataclass
-from functools import lru_cache
+from functools import lru_cache, total_ordering
+from typing import Dict
 
 from networkx import topological_sort
 from networkx.classes.digraph import DiGraph
@@ -16,14 +17,37 @@ class IsRootSpinException(Exception):
     pass
 
 
+@total_ordering
 @dataclass
-class SubConfiguration:
-    value: int
-    spin_formation: str
+class PartialConfiguration:
+    energy: int
+    spin_assignment: Dict[int, int]
+
+    def __eq__(self, other):
+        assert set(self.spin_assignment.keys()) == set(other.spin_assignment.keys())
+        return self.energy == other.energy
+
+    def __lt__(self, other):
+        assert set(self.spin_assignment.keys()) == set(other.spin_assignment.keys())
+        return self.energy < other.energy
+
+    def __add__(self, other):
+        for intersecting_spin in set(self.spin_assignment.keys()).intersection(
+            set(other.spin_assignment.keys())
+        ):
+            assert (
+                self.spin_assignment[intersecting_spin]
+                == other.spin_assignment[intersecting_spin]
+            )
+
+        return PartialConfiguration(
+            energy=self.energy + other.energy,
+            spin_assignment={**self.spin_assignment, **other.spin_assignment},
+        )
 
 
 @lru_cache(maxsize=None)
-def min_energy_configuration_subtree(
+def min_energy_subtree(
     focal_spin: int, parent_spin_value: int, directed_graph: DiGraph
 ):
     """Need to provide focal spin and parent spin value.
@@ -39,12 +63,15 @@ def min_energy_configuration_subtree(
         focal_spin_value: int, parent_spin: int, parent_spin_value: int
     ):
         min_energy_subtree_given_focal_spin_value = sum(
-            min_energy_configuration_subtree(
-                focal_spin=to_spin,
-                parent_spin_value=focal_spin_value,
-                directed_graph=directed_graph,
-            )
-            for _, to_spin in directed_graph.out_edges(focal_spin)
+            (
+                min_energy_subtree(
+                    focal_spin=to_spin,
+                    parent_spin_value=focal_spin_value,
+                    directed_graph=directed_graph,
+                )
+                for _, to_spin in directed_graph.out_edges(focal_spin)
+            ),
+            PartialConfiguration(energy=0, spin_assignment=dict()),
         )
 
         focal_weight = directed_graph.nodes[focal_spin]["weight"]
@@ -57,11 +84,17 @@ def min_energy_configuration_subtree(
             focal_spin_value * parent_spin_value * parent_to_focal_weight
         )
 
-        return (
-            min_energy_subtree_given_focal_spin_value
+        min_energy = (
+            min_energy_subtree_given_focal_spin_value.energy
             + focal_spin_value_contribution
             + parent_spin_value_contribution
         )
+        spin_assignment = {
+            **min_energy_subtree_given_focal_spin_value.spin_assignment,
+            **{focal_spin: focal_spin_value, parent_spin: parent_spin_value},
+        }
+
+        return PartialConfiguration(energy=min_energy, spin_assignment=spin_assignment)
 
     if predecessor := list(directed_graph.predecessors(focal_spin)):
         assert len(predecessor) == 1
@@ -80,28 +113,27 @@ def min_energy_configuration_subtree(
         raise IsRootSpinException(f"{focal_spin} is a root node.")
 
 
-@lru_cache(maxsize=None)
-def min_energy_subtree(focal_spin: int, parent_spin: int):
-    raise NotImplementedError
-
-
 def solve_ising_problem(ising_problem: IsingTreeProblem):
     root_node = ising_problem.root_node
 
     def get_min_energy_configuration_given_root_node_value(root_node_value):
         child_spin_contribution = sum(
-            min_energy_configuration_subtree(
-                focal_spin=to_spin,
-                parent_spin_value=root_node_value,
-                directed_graph=ising_problem.directed_graph,
-            )
-            for _, to_spin in ising_problem.directed_graph.out_edges(root_node)
+            (
+                min_energy_subtree(
+                    focal_spin=to_spin,
+                    parent_spin_value=root_node_value,
+                    directed_graph=ising_problem.directed_graph,
+                )
+                for _, to_spin in ising_problem.directed_graph.out_edges(root_node)
+            ),
+            PartialConfiguration(energy=0, spin_assignment=dict()),
         )
-
         root_weight = ising_problem.directed_graph.nodes[root_node]["weight"]
         root_spin_contribution = root_node_value * root_weight
 
-        return child_spin_contribution + root_spin_contribution
+        child_spin_contribution.energy += root_spin_contribution
+
+        return child_spin_contribution
 
     return min(
         get_min_energy_configuration_given_root_node_value(root_node_value)
