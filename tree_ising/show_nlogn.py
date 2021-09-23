@@ -11,21 +11,21 @@ def nlognplot():
     problem_loader_n_spins = ProblemLoaderFromNSpins()
 
     data = dict()
-    for n_spins in range(2, 15):
-        problem = problem_loader_n_spins.load_problem(depth=n_spins)
+    for depth in range(2, 15):
+        problem = problem_loader_n_spins.load_problem(depth=depth)
 
         start = time.time()
         solve_ising_problem(problem)
         end = time.time()
-        data[n_spins] = end - start
+        data[depth] = end - start
 
     fig, ax = plt.subplots()
 
     xs, ys = [], []
-    for x, y in data.items():
-        n = 2 ** x
-        xs.append(n * math.log(n))
-        ys.append(y)
+    for depth, time in data.items():
+        n_spins = 2 ** depth
+        xs.append(n_spins * math.log(n_spins))
+        ys.append(time)
 
     ax.scatter(x=xs, y=ys)
     ax.set_title("The algo is N log N")
