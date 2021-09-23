@@ -1,6 +1,6 @@
 # Spin model exercise
-This repo is part of an exercise regarding ising model on tree graphs. The reason this can be done in O(N Log(N)) is because of the @lru_cache decorator
-which stores the previously calculated values.
+This repo is part of an exercise regarding ising model on tree graphs. The reason this problem can be solved in O(N Log(N)) is because of the @lru_cache decorator
+which stores the previously calculated values (a dynamic programming implementation)
 
 # Installation
 I'm using python version 3.9.7
